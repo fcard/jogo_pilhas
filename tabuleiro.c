@@ -43,6 +43,10 @@ static CorComIndice** aleatorizar_tabuleiro(size_t tamanho, size_t numJogadores,
     if (numPecas % numJogadores != 0) {
       numPecas -= 1;
       meioRemovido = true;
+      if (numPecas % numJogadores != 0) {
+	numPecas += 4;
+	ladosRemovidos = false;
+      }
     }
   }
   size_t maxPecasPorJogador = numPecas / numJogadores;
