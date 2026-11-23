@@ -2,6 +2,51 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#if defined(_WIN32) || defined(_WIN64) || defined(__CYGWIN__)
+#include <windows.h>
+#define WIN_COLOR_RESET 7
+
+#define WIN_COLOR_RED     4
+#define WIN_COLOR_GREEN   2
+#define WIN_COLOR_BLUE    1
+#define WIN_COLOR_YELLOW  6
+#define WIN_COLOR_MAGENTA 5
+
+#define WIN_COLOR_BG_RED     7+WIN_COLOR_RED*16
+#define WIN_COLOR_BG_GREEN   7+WIN_COLOR_GREEN*16
+#define WIN_COLOR_BG_BLUE    7+WIN_COLOR_BLUE*16
+#define WIN_COLOR_BG_YELLOW  7+WIN_COLOR_YELLOW*16
+#define WIN_COLOR_BG_MAGENTA 7+WIN_COLOR_MAGENTA*16
+
+static void imprimir_para_arquivo_com_cor(FILE* file, const char* s, Cor cor) {
+  int c;
+  switch(cor) {
+    case Cor_Vermelho: c = WIN_COLOR_RED; break;
+    case Cor_Verde:    c = WIN_COLOR_GREEN; break;
+    case Cor_Azul:     c = WIN_COLOR_BLUE; break;
+    case Cor_Amarelo:  c = WIN_COLOR_YELLOW; break;
+    case Cor_Roxo:     c = WIN_COLOR_MAGENTA; break;
+  }
+  SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), c);
+  fprintf(file, "%s", s);
+  SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), WIN_COLOR_RESET);
+}
+
+static void imprimir_para_arquivo_com_cor_de_fundo(FILE* file, const char* s, Cor cor) {
+  int c;
+  switch(cor) {
+    case Cor_Vermelho: c = WIN_COLOR_BG_RED; break;
+    case Cor_Verde:    c = WIN_COLOR_BG_GREEN; break;
+    case Cor_Azul:     c = WIN_COLOR_BG_BLUE; break;
+    case Cor_Amarelo:  c = WIN_COLOR_BG_YELLOW; break;
+    case Cor_Roxo:     c = WIN_COLOR_BG_MAGENTA; break;
+  }
+  SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), c);
+  fprintf(file, "%s", s);
+  SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), WIN_COLOR_RESET);
+}
+
+#else
 #define ANSI_COLOR_RED     "\x1b[31m"
 #define ANSI_COLOR_GREEN   "\x1b[32m"
 #define ANSI_COLOR_BLUE    "\x1b[34m"
@@ -15,7 +60,6 @@
 #define ANSI_COLOR_BG_MAGENTA "\x1b[45m"
 
 #define ANSI_COLOR_RESET   "\x1b[0m"
-
 
 static void imprimir_para_arquivo_com_cor(FILE* file, const char* s, Cor cor) {
   char* c;
@@ -40,6 +84,8 @@ static void imprimir_para_arquivo_com_cor_de_fundo(FILE* file, const char* s, Co
   }
   fprintf(file, "%s%s%s", c, s, ANSI_COLOR_RESET);
 }
+
+#endif
 
 void imprimir_com_cor(const char* s, Cor cor) {
   imprimir_para_arquivo_com_cor(stdout, s, cor);
