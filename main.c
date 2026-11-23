@@ -20,13 +20,12 @@ static size_t ler_inteiro(const char* desc, size_t min, size_t max) {
   size_t r;
   printf("%s; Digite um numero :> ", desc);
 
-  int n = scanf(" %zu\n", &r);
+  int n = scanf(" %zu", &r);
   if (n == 1 && (r >= min && r <= max)) {
+    flush_stdin_uncond();
     return r;
   } else {
-    if (n != 1) {
-      flush_stdin_uncond();
-    }
+    flush_stdin_uncond();
     printf("Valor invalido!\n\n");
     return ler_inteiro(desc, min, max);
   }
@@ -35,13 +34,11 @@ static size_t ler_inteiro(const char* desc, size_t min, size_t max) {
 static Coordenadas ler_coordenadas(const char* desc, size_t min, size_t max, size_t* linhasPuladas) {
   size_t rx, ry;
   printf("%s; Digite coordenadas :> ", desc);
-  int n = scanf(" %zu %zu\n", &rx, &ry);
+  int n = scanf(" %zu %zu", &rx, &ry);
   if (n == 2 && (rx >= min && rx <= max) && (ry >= min && ry <= max)) {
     return COORD(rx,ry);
   } else {
-    if (n != 2) {
-      flush_stdin_uncond();
-    }
+    flush_stdin_uncond();
     *linhasPuladas += 2;
     printf("Valores invalidos!\n\n");
     return ler_coordenadas(desc, min, max, linhasPuladas);
