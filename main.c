@@ -4,6 +4,15 @@
 #include <stdlib.h>
 #include <time.h>
 
+#if defined(_WIN32) || defined(_WIN64) || defined(__CYGWIN__)
+#  include <windows.h>
+#  define CPU_ESPERA 1000
+#  define sleep(x) Sleep(x)
+#else
+#  include <unistd.h>
+#  define CPU_ESPERA 1
+#endif
+
 static void flush_stdin_uncond() {
   int c;
   while ((c = getchar()) != '\n' && c != EOF) { }
@@ -86,55 +95,98 @@ static Dir ler_direcao(const char* desc, size_t* linhasPuladas, bool* p) {
   return ler_direcao(desc, linhasPuladas, p);
 }
 
+static const char CPU_PL_STR[4][50] = {
+  "Quantidade de Jogadores CPU (0=>2)",
+  "Quantidade de Jogadores CPU (0=>3)",
+  "Quantidade de Jogadores CPU (0=>4)",
+  "Quantidade de Jogadores CPU (0=>5)",
+};
+
 int main() {
   srand(time(nullptr));
   Erro err = Successo;
 
   size_t linhasPuladas = 0;
 
-  size_t numJogadores = ler_inteiro("Quantidade de Jogadores (2=>5)", 1, 5);
+  size_t numJogadores = ler_inteiro("Quantidade de Jogadores (2=>5)", 2, 5);
+  size_t numCPU = ler_inteiro(CPU_PL_STR[numJogadores-2], 0, numJogadores);
   size_t tamanhoTabuleiro = ler_inteiro("Tamanho do Tabuleiro (5=>10)", 5, 10);
+
+  bool jogadoresCPU[5] = {
+    numCPU == numJogadores,
+    numCPU >= numJogadores-1,
+    numJogadores >= 3 && numCPU >= numJogadores-2,
+    numJogadores >= 4 && numCPU >= numJogadores-3,
+    numJogadores >= 5 && numCPU >= numJogadores-4,
+  };
 
   VALIDAR(err, auto tab = tabuleiro_criar(tamanhoTabuleiro, numJogadores, &err));
 
   bool fimDeJogo = false;
   while (!fimDeJogo) {
-    printf("\n");
-    fimDeJogo = true;
     for (size_t jg = 0; jg < numJogadores; jg++) {
       if (tabuleiro_pode_jogar(tab, jg)) {
+        printf("\n");
 	Cor corDoJogador = Cor_Vermelho << jg;
         VALIDAR(err, tabuleiro_mostrar(tab, &err));
 	printf("Turno do jogador [");
 	imprimir_com_cor_de_fundo("  ", corDoJogador);
 	printf("]\n");
-        fimDeJogo = false;
-	bool fimDaJogada;
-	do {
-          Coordenadas de = ler_coordenadas("Posicao da jogada", 0, tamanhoTabuleiro, &linhasPuladas); 
-	  if (tabuleiro_espaco_pertence_a(tab, de, jg, &err)) {
-	    bool px = true;
-	    Dir para = ler_direcao("Direcao da jogada", &linhasPuladas, &px);
-	    VALIDAR(err, fimDaJogada = tabuleiro_mover(tab, de, para, &err));
-	    if (!fimDaJogada) {
-	      printf("Jogada invalida!\n\n");
-	      if (linhasPuladas > 32) {
-	        linhasPuladas = 0;
-                VALIDAR(err, tabuleiro_mostrar(tab, &err));
-	        printf("Turno do jogador [");
-	        imprimir_com_cor_de_fundo("  ", corDoJogador);
-	        printf("]\n");
-	      }
-	    }
-	  } else {
-	    linhasPuladas += 2;
-	    printf("Espaco nao pertence ao jogador!\n\n");
-	    fimDaJogada = false;
+	if (jogadoresCPU[jg]) {
+          VALIDAR(err, Jogada jogadaCPU = tabuleiro_jogar_cpu(tab, jg, &err));
+	  printf("Jogada: %zu %zu; ", jogadaCPU.coord.x, jogadaCPU.coord.y);
+	  switch (jogadaCPU.dir) {
+	    case Dir_Sul:   printf("S\n"); break;
+	    case Dir_Norte: printf("N\n"); break;
+	    case Dir_Leste: printf("E\n"); break;
+	    case Dir_Oeste: printf("W\n"); break;
+	    case Dir_Nordeste: printf("NE\n"); break;
+	    case Dir_Noroeste: printf("NW\n"); break;
+	    case Dir_Sudeste:  printf("SE\n"); break;
+	    case Dir_Sudoeste: printf("SW\n"); break;
 	  }
-	} while (!fimDaJogada);
+	  VALIDAR(err, tabuleiro_mover(tab, jogadaCPU.coord, jogadaCPU.dir, &err));
+	  sleep(CPU_ESPERA);
+	  
+	} else {
+  	  bool fimDaJogada;
+	  do {
+            Coordenadas de = ler_coordenadas("Posicao da jogada", 0, tamanhoTabuleiro, &linhasPuladas); 
+	    if (tabuleiro_espaco_pertence_a(tab, de, jg, &err)) {
+	      bool px = true;
+	      Dir para = ler_direcao("Direcao da jogada", &linhasPuladas, &px);
+	      VALIDAR(err, fimDaJogada = tabuleiro_mover(tab, de, para, &err));
+	      if (!fimDaJogada) {
+	        printf("Jogada invalida!\n\n");
+	        if (linhasPuladas > 32) {
+	          linhasPuladas = 0;
+                  VALIDAR(err, tabuleiro_mostrar(tab, &err));
+	          printf("Turno do jogador [");
+	          imprimir_com_cor_de_fundo("  ", corDoJogador);
+	          printf("]\n");
+	        }
+	      }
+	    } else {
+	      linhasPuladas += 2;
+	      printf("Espaco nao pertence ao jogador!\n\n");
+	      fimDaJogada = false;
+	    }
+  	  } while (!fimDaJogada);
+	}
+        fimDeJogo = true;
+        for (size_t jgp = 0; jgp < numJogadores; jgp++) {
+          if (tabuleiro_pode_jogar(tab, jgp)) {
+            fimDeJogo = false;
+	    break;
+	  }
+        }
       }
     }
   }
+
+  printf("\n\n");
+  VALIDAR(err, tabuleiro_mostrar(tab, &err));
+  printf("\n\n");
 
   VALIDAR(err, Pilha* vencedores = pilha_criar(&err));
   size_t pontuacao;
@@ -162,4 +214,6 @@ int main() {
   printf("]\n");
   return 0;
 }
+
+
 

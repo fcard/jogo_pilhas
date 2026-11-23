@@ -152,6 +152,7 @@ Tabuleiro* tabuleiro_criar(size_t tamanho, size_t numJogadores, Erro* err) {
     for (size_t i = 0; i < numJogadores; i++) {
       Jogador* jg = &tab->jogadores[i];
       jg->cor = CORES[i];
+      jg->numJogadas = 0;
       jg->espacosOcupados = (bool**)malloc_matrix(sizeof(bool), tamanho, tamanho, err);
       if (jg->espacosOcupados == nullptr) {
 	return nullptr;
@@ -344,5 +345,48 @@ Pilha** tabuleiro_finalizar_resultado(Tabuleiro* tab, Erro* err) {
     }
   }
   return resultado;
+}
+
+Jogada tabuleiro_jogar_cpu(Tabuleiro* tab, size_t jg, Erro* err) {
+  static Coordenadas XY[100];
+  size_t tamanho_xy = 0;
+  size_t tamanho_max = 0;
+
+  for (size_t i = 0; i < tab->tamanho; i++) {
+    for (size_t j = 0; j < tab->tamanho; j++) {
+      EspacoTabuleiro* e = &tab->espacos[i][j];
+      if (e->tamanho > 0 && e->podeJogarPara != 0 && pilha_topo(e->pilha, err).indice == jg) {
+	if (e->tamanho > tamanho_max) {
+	  tamanho_xy = 1;
+	  XY[0] = e->coord;
+	  tamanho_max = e->tamanho;
+	} else if (e->tamanho == tamanho_max) {
+	  XY[tamanho_xy] = e->coord;
+	  tamanho_xy += 1;
+	}
+      }
+    }
+  }
+
+  size_t n = rand() % tamanho_xy;
+  size_t x = XY[n].x;
+  size_t y = XY[n].y;
+  EspacoTabuleiro* e = &tab->espacos[y][x];
+
+  Dir dir = 1;
+  Dir aux = e->podeJogarPara;
+  size_t m = 1 + (rand() % TAMANHO_DIRECAO[e->podeJogarPara]);
+  while (m > 0) {
+    while ((aux & 1) == 0) {
+      dir = dir << 1;
+      aux = aux >> 1;
+    }
+    dir = dir << 1;
+    aux = aux >> 1;
+    m -= 1;
+  }
+  dir = dir >> 1;
+
+  return (Jogada){e->coord, dir};
 }
 

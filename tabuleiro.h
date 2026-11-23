@@ -11,6 +11,7 @@ typedef struct coordenadas Coordenadas;
 typedef struct jogador Jogador;
 typedef struct espacoTabuleiro EspacoTabuleiro;
 typedef enum dir Dir;
+typedef struct jogada Jogada;
 
 enum dir {
   Dir_Sul = 1,
@@ -30,6 +31,11 @@ struct coordenadas {
   size_t y;
 };
 
+struct jogada {
+  Coordenadas coord;
+  Dir dir;
+};
+
 Tabuleiro* tabuleiro_criar(size_t, size_t, Erro*);
 void tabuleiro_mostrar(Tabuleiro*, Erro*);
 bool tabuleiro_mover(Tabuleiro*, Coordenadas, Dir, Erro*);
@@ -37,5 +43,6 @@ bool tabuleiro_espaco_pertence_a(Tabuleiro*, Coordenadas, size_t, Erro*);
 bool tabuleiro_pode_jogar(Tabuleiro*, size_t);
 bool tabuleiro_checar_vitoria(Tabuleiro*, Cor*);
 Pilha** tabuleiro_finalizar_resultado(Tabuleiro*, Erro*);
+Jogada tabuleiro_jogar_cpu(Tabuleiro*, size_t, Erro*);
 
 #endif
