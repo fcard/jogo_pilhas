@@ -4,10 +4,14 @@
 #include <stdlib.h>
 #include <time.h>
 
+static void flush_stdin_uncond() {
+  int c;
+  while ((c = getchar()) != '\n' && c != EOF) { }
+}
+
 static void flush_stdin(bool* p) {
   if (*p) {
-    int c;
-    while ((c = getchar()) != '\n' && c != EOF) { }
+    flush_stdin_uncond();
     *p = false;
   }
 }
@@ -15,10 +19,14 @@ static void flush_stdin(bool* p) {
 static size_t ler_inteiro(const char* desc, size_t min, size_t max) {
   size_t r;
   printf("%s; Digite um numero :> ", desc);
-  
-  if (scanf(" %zu", &r) == 1 && (r >= min && r <= max)) {
+
+  int n = scanf(" %zu\n", &r);
+  if (n == 1 && (r >= min && r <= max)) {
     return r;
   } else {
+    if (n != 1) {
+      flush_stdin_uncond();
+    }
     printf("Valor invalido!\n\n");
     return ler_inteiro(desc, min, max);
   }
@@ -27,10 +35,13 @@ static size_t ler_inteiro(const char* desc, size_t min, size_t max) {
 static Coordenadas ler_coordenadas(const char* desc, size_t min, size_t max, size_t* linhasPuladas) {
   size_t rx, ry;
   printf("%s; Digite coordenadas :> ", desc);
- 
-  if (scanf(" %zu %zu", &rx, &ry) == 2 && (rx >= min && rx <= max) && (ry >= min && ry <= max)) {
+  int n = scanf(" %zu %zu\n", &rx, &ry);
+  if (n == 2 && (rx >= min && rx <= max) && (ry >= min && ry <= max)) {
     return COORD(rx,ry);
   } else {
+    if (n != 2) {
+      flush_stdin_uncond();
+    }
     *linhasPuladas += 2;
     printf("Valores invalidos!\n\n");
     return ler_coordenadas(desc, min, max, linhasPuladas);
@@ -47,7 +58,7 @@ static Dir ler_direcao(const char* desc, size_t* linhasPuladas, bool* p) {
 
   flush_stdin(p);
   fgets(d, 3, stdin);
-  *p = d[1] != '\n' && d[2] != '\n' && d[3] != '\n';
+  *p = d[0] != '\n' && d[1] != '\n' && d[2] != '\n' && d[3] != '\n';
 
   #define FLUSH_AND_RETURN(X) flush_stdin(p); return X
 
